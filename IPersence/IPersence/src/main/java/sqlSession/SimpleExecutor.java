@@ -126,34 +126,8 @@ public class SimpleExecutor implements Executor {
     }
 
     @Override
-    public void delete(Configuration configuration, MapperStatement mapperStatement, Object... params) throws SQLException, ClassNotFoundException, Exception {
-        /**
-         * 数据库地址写错，造成的问题：程序一直停在这里，没有报错
-         */
-        //1. 注册驱动获取连接
-        Connection connection = configuration.getDataSource().getConnection();
-
-        //将获取的sql进行装换，将#{} 转换为？(占位符)  。将#{}中的参数解析出来进行封装到boundSql对象中
-        String sql = mapperStatement.getSql();
-        BoundSql boundSql = getBoundSql(sql);//封装SQl和参数名
-
-        //3. 获取预处理对象
-        PreparedStatement statement = connection.prepareStatement(boundSql.getSqlText());
-        //获取参数的全路径
-        String paramterType = mapperStatement.getParamterType();
-        //根据全路径获取他的class对象
-        Class<?> paramterClass = getClassType(paramterType);
-        //通过反射获取参数值
-        List<ParamsMapping> list = boundSql.getList();
-        for (int i = 0;i < list.size() ;i++){
-            ParamsMapping paramsMapping = list.get(i);
-            String content = paramsMapping.getContent();
-            Field declaredField = paramterClass.getDeclaredField(content);
-            declaredField.setAccessible(true);
-            Object o = declaredField.get(params[0]);
-            //预编译对象设置参数
-            statement.setObject(i+1,o);
-        }
+    public void delete(Configuration configuration, MapperStatement mapperStatement, Object... params) throws  Exception {
+        PreparedStatement statement = commonParse(configuration, mapperStatement, params);
         //执行sql
         int resultSet = statement.executeUpdate();
         //return resultSet;
@@ -161,33 +135,7 @@ public class SimpleExecutor implements Executor {
 
     @Override
     public void insert(Configuration configuration, MapperStatement mapperStatement, Object... params) throws SQLException, ClassNotFoundException, Exception {
-        /**
-         * 数据库地址写错，造成的问题：程序一直停在这里，没有报错
-         */
-        //1. 注册驱动获取连接
-        Connection connection = configuration.getDataSource().getConnection();
-
-        //将获取的sql进行装换，将#{} 转换为？(占位符)  。将#{}中的参数解析出来进行封装到boundSql对象中
-        String sql = mapperStatement.getSql();
-        BoundSql boundSql = getBoundSql(sql);//封装SQl和参数名
-
-        //3. 获取预处理对象
-        PreparedStatement statement = connection.prepareStatement(boundSql.getSqlText());
-        //获取参数的全路径
-        String paramterType = mapperStatement.getParamterType();
-        //根据全路径获取他的class对象
-        Class<?> paramterClass = getClassType(paramterType);
-        //通过反射获取参数值
-        List<ParamsMapping> list = boundSql.getList();
-        for (int i = 0;i < list.size() ;i++){
-            ParamsMapping paramsMapping = list.get(i);
-            String content = paramsMapping.getContent();
-            Field declaredField = paramterClass.getDeclaredField(content);
-            declaredField.setAccessible(true);
-            Object o = declaredField.get(params[0]);
-            //预编译对象设置参数
-            statement.setObject(i+1,o);
-        }
+        PreparedStatement statement = commonParse(configuration, mapperStatement, params);
         //执行sql
         int resultSet = statement.executeUpdate();
         //return resultSet;
@@ -226,6 +174,37 @@ public class SimpleExecutor implements Executor {
         boundSql.setSqlText(parseSql);
         boundSql.setList(parameterMappings);
         return boundSql;
+    }
+
+    public PreparedStatement  commonParse( Configuration configuration, MapperStatement mapperStatement, Object... params) throws Exception {
+        /**
+         * 数据库地址写错，造成的问题：程序一直停在这里，没有报错
+         */
+        //1. 注册驱动获取连接
+        Connection connection = configuration.getDataSource().getConnection();
+
+        //将获取的sql进行装换，将#{} 转换为？(占位符)  。将#{}中的参数解析出来进行封装到boundSql对象中
+        String sql = mapperStatement.getSql();
+        BoundSql boundSql = getBoundSql(sql);//封装SQl和参数名
+
+        //3. 获取预处理对象
+        PreparedStatement statement = connection.prepareStatement(boundSql.getSqlText());
+        //获取参数的全路径
+        String paramterType = mapperStatement.getParamterType();
+        //根据全路径获取他的class对象
+        Class<?> paramterClass = getClassType(paramterType);
+        //通过反射获取参数值
+        List<ParamsMapping> list = boundSql.getList();
+        for (int i = 0;i < list.size() ;i++){
+            ParamsMapping paramsMapping = list.get(i);
+            String content = paramsMapping.getContent();
+            Field declaredField = paramterClass.getDeclaredField(content);
+            declaredField.setAccessible(true);
+            Object o = declaredField.get(params[0]);
+            //预编译对象设置参数
+            statement.setObject(i+1,o);
+        }
+        return statement;
     }
 
 
